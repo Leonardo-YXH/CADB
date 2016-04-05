@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<title>cadb-module</title>
+		
+		<script type="text/javascript" src="echarts.min.js"></script>
+		
+	</head>
+	<body>
+		<div id='content' style="width:1200px;height:800px;"></div>
+	</body>
+	<script>
+		var myChart = echarts.init(document.getElementById('content'));
+		myChart.showLoading();
+		var diskData=[
+						{value:20,
+						name:'1：可视化层',
+						path:'UI',
+						children:[
+								{value:12,
+								name:'1.1:实时',
+								path:'real',
+								children:[
+										{value:3,
+										name:'1.1.1:原始数据实时',
+										path:'original data real'
+										},
+										{value:3,
+										name:'1.1.2:统计数据实时',
+										path:'statistic data real'
+										},
+										{value:6,
+										name:'1.1.3:历史数据累积',
+										path:'history data accumulator',
+										children:[
+												{value:3,
+												name:'1.1.3.1:数据累加',
+												path:'sum data'
+												},
+												{value:3,
+												name:'1.1.3.2:带积分因子累积',
+												path:'sum data with dx'
+												}
+											]
+										}
+									]
+								},
+								{value:4,
+								name:'1.2:历史数据',
+								path:'history',
+								children:[
+										{value:2,
+										name:'1.2.1:文件数据',
+										path:'original file data'
+										},
+										{value:2,
+										name:'1.2.2:数据库统计数据',
+										path:'db statistic data'
+										}
+									]
+								},
+								{value:4,
+								name:'1.3:统计报表',
+								path:'statistic',
+								children:[
+										{value:2,
+										name:'1.3.1:文件数据',
+										path:'report original file data'
+										},
+										{value:2,
+										name:'1.3.2:数据库统计数据',
+										path:'report db statistic data'
+										}
+									]
+								}
+							]
+						},
+						{value:50,
+						name:'2:智能分析层',
+						path:'smartAnalysis',
+						children:[
+								{value:5,
+								name:'2.1:基本统计',
+								path:'basic statistic'
+								},
+								{value:10,
+								name:'2.2:通道合并',
+								path:'channel combine'
+								},
+								{value:10,
+								name:'2.3:阈值分析',
+								path:'threshold value'
+								},
+								{value:15,
+								name:'2.4:车比雪夫滤波',
+								path:'cheby filter'
+								},
+								{value:5,
+								name:'2.5:SPC统计过程控制',
+								path:'statistic process control'
+								},
+								{value:5,
+								name:'2.6:快速傅里叶变换',
+								path:'fast fourier transform'
+								}
+							]
+						},
+						{value:35,
+						name:'3:数据汇聚层',
+						path:'dataConverge',
+						children:[
+								{value:14,
+								name:'3.1:缓存池',
+								path:'cache pool',
+								children:[
+										{value:4,
+										name:'3.1.1:原始数据缓存池',
+										path:'original data pool'
+										},
+										{value:5,
+										name:'3.1.2:基本统计缓存池',
+										path:'basic statistic data pool'
+										},
+										{value:5,
+										name:'3.1.3:数据事件处理',
+										path:'data handler'
+										}
+									]
+								},
+								{value:16,
+								name:'3.2:文件存储系统',
+								path:'np file system',
+								children:[
+										{value:5,
+										name:'3.2.1:原始数据存储',
+										path:'original data write'
+										},
+										{value:5,
+										name:'3.2.2:基本统计缓存池',
+										path:'original data read'
+										},
+										{value:6,
+										name:'3.2.3:数据清理',
+										path:'data clear',
+										children:[
+												{value:2,
+												name:'3.2.3.1:文件压缩解压缩',
+												path:'zip file'
+												},
+												{value:1,
+												name:'3.2.3.2:文件删除',
+												path:'delete file'
+												},
+												{value:3,
+												name:'3.2.3.3:定期清理',
+												path:'quartz data clear'
+												}
+											]
+										}
+									]
+								},
+								{value:5,
+								name:'3.3:mysql存储统计数据',
+								path:'db persistence'
+								}
+							]
+						},
+						{value:10,
+						name:'4:数据采集层',
+						path:'dataCollector',
+						children:[
+								{value:5,
+								name:'4.1:采集服务器',
+								path:'dataCollector server'
+								},
+								{value:3,
+								name:'4.2:采集客户端',
+								path:'dataCollector client'
+								},
+								{value:2,
+								name:'4.3:数据过滤',
+								path:'dataCollector filter'
+								}
+								]
+						},		
+						{value:10,
+						name:'5:系统配置层',
+						path:'config'}
+					];
+		function show(diskData) {
+			myChart.hideLoading();
+
+			function colorMappingChange(value) {
+				var levelOption = getLevelOption(value);
+				chart.setOption({
+					series: [{
+						levels: levelOption
+					}]
+				});
+			}
+
+			var formatUtil = echarts.format;
+
+			function getLevelOption() {
+				return [
+					{
+						itemStyle: {
+							normal: {
+								borderWidth: 0,
+								gapWidth: 6
+							}
+						}
+					},
+					{
+						itemStyle: {
+							normal: {
+								gapWidth: 4
+							}
+						}
+					},
+					{
+						itemStyle: {
+							normal: {
+								gapWidth: 2
+							}
+						}
+					},
+					{
+						itemStyle: {
+							normal: {
+								gapWidth: 1
+							}
+						}
+					},
+					{
+						colorSaturation: [0.35, 0.5],
+						itemStyle: {
+							normal: {
+								gapWidth: 1,
+								borderColorSaturation: 0.6
+							}
+						}
+					}
+				];
+			}
+
+			myChart.setOption(option = {
+
+				title: {
+					text: 'CADB Module',
+					left: 'center'
+				},
+
+				tooltip: {
+					formatter: function (info) {
+						var value = info.value;
+						var treePathInfo = info.treePathInfo;
+						var treePath = [];
+
+						for (var i = 0; i < treePathInfo.length-1; i++) {
+							treePath.push(treePathInfo[i].name);
+						}
+						return 'spend time: ' + formatUtil.addCommas(value) + ' day';
+						/*return [
+							'<div class="tooltip-title">' + formatUtil.encodeHTML(treePath.join('/'))+'/'+info.name + '</div>',
+							'spend time: ' + formatUtil.addCommas(value) + ' KB',
+						].join('');*/
+					}
+				},
+				
+				series: [
+					{
+						name:'CADB Module',
+						type:'treemap',
+						visibleMin: 300,
+						nodeClick:'zoomToNode',
+						label: {
+							show: false,
+							formatter: '{b}'
+						},
+						itemStyle: {
+							normal: {
+								borderColor: '#fff'
+							}
+						},
+						levels: getLevelOption(),
+						data: diskData
+					}
+				]
+			});
+		}
+		show(diskData);
+	</script>
+</html>

@@ -1,0 +1,192 @@
+[
+	{value:100,
+	name:'可视化层',
+	path:'ui'
+	},
+	{value:100,
+	name:'智能分析层',
+	path:'smartAnalysis'},
+	{value:200,
+	name:'数据汇聚层',
+	path:'dataConverge'},
+	{value:100,
+	name:'数据采集层',
+	path:'dataCollector'},
+	{value:100,
+	name:'系统配置层',
+	path:'config'}
+]
+
+
+
+var diskData=[
+						{value:20,
+						name:'可视化层',
+						path:'UI',
+						children:[
+								{value:12,
+								name:'实时',
+								path:'real',
+								children:[
+										{value:3,
+										name:'原始数据实时',
+										path:'original data real'
+										},
+										{value:3,
+										name:'统计数据实时',
+										path:'statistic data real'
+										},
+										{value:6,
+										name:'历史数据累积',
+										path:'history data accumulator',
+										children:[
+												{value:3,
+												name:'数据累加',
+												path:'sum data'
+												},
+												{value:3,
+												name:'带积分因子累积',
+												path:'sum data with dx'
+												}
+											]
+										}
+									]
+								},
+								{value:4,
+								name:'历史数据',
+								path:'history',
+								children:[
+										{value:2,
+										name:'文件数据',
+										path:'original file data'
+										},
+										{value:2,
+										name:'数据库统计数据',
+										path:'db statistic data'
+										}
+									]
+								},
+								{value:4,
+								name:'统计报表',
+								path:'statistic',
+								children:[
+										{value:2,
+										name:'文件数据',
+										path:'report original file data'
+										},
+										{value:2,
+										name:'数据库统计数据',
+										path:'report db statistic data'
+										}
+									]
+								}
+							]
+						},
+						{value:60,
+						name:'智能分析层',
+						path:'smartAnalysis',
+						children:[
+								{value:20,
+								name:'基本统计',
+								path:'basic statistic'
+								},
+								{value:15,
+								name:'通道合并',
+								path:'channel combine'
+								},
+								{value:15,
+								name:'车比雪夫滤波',
+								path:'cheby filter'
+								},
+								{value:5,
+								name:'SPC统计过程控制',
+								path:'statistic process control'
+								},
+								{value:5,
+								name:'快速傅里叶变换',
+								path:'fast fourier transform'
+								}
+							]
+						},
+						{value:55,
+						name:'数据汇聚层',
+						path:'dataConverge',
+						children:[
+								{value:35,
+								name:'缓存池',
+								path:'cache pool',
+								children:[
+										{value:10,
+										name:'原始数据缓存池',
+										path:'original data pool'
+										},
+										{value:20,
+										name:'基本统计缓存池',
+										path:'basic statistic data pool'
+										},
+										{value:5,
+										name:'数据操作',
+										path:'data handler'
+										}
+									]
+								},
+								{value:15,
+								name:'文件存储系统',
+								path:'np file system',
+								children:[
+										{value:10,
+										name:'原始数据存储',
+										path:'original data write'
+										},
+										{value:5,
+										name:'基本统计缓存池',
+										path:'original data read'
+										},
+										{value:10,
+										name:'数据清理',
+										path:'data clear',
+										children:[
+												{value:5,
+												name:'文件压缩解压缩',
+												path:'zip file'
+												},
+												{value:2,
+												name:'文件删除',
+												path:'delete file'
+												},
+												{value:3,
+												name:'定期清理',
+												path:'quartz data clear'
+												}
+											]
+										}
+									]
+								},
+								{value:5,
+								name:'mysql存储统计数据',
+								path:'db persistence'
+								}
+							]
+						},
+						{value:10,
+						name:'数据采集层',
+						path:'dataCollector',
+						children:[
+								{value:5,
+								name:'采集服务器',
+								path:'dataCollector server'
+								},
+								{value:3,
+								name:'采集客户端',
+								path:'dataCollector client'
+								},
+								{value:2,
+								name:'数据过滤',
+								path:'dataCollector filter'
+								}
+								]
+						},		
+						{value:10,
+						name:'系统配置层',
+						path:'config'}
+					];

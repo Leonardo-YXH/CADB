@@ -1,0 +1,21 @@
+{
+	"root":"true",
+	"dataDir":"G://data-inhour",
+	"cache":{
+		"size":120,
+		"blockInterval_in_ms":3600000
+	},
+	"handler":{
+		"fileHandler":{"persistenceSize":24},
+		"sqlHandlers":[]
+	},
+	"child":{
+		"cache":{
+			"size":14,
+			"blockInterval_in_ms":86400000
+		},
+		"handler":{
+			"sqlHandlers":[]
+		}
+	}
+}
