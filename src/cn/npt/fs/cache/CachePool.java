@@ -2,6 +2,7 @@ package cn.npt.fs.cache;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 
 import com.alibaba.fastjson.JSONObject;
 
@@ -15,6 +16,11 @@ import cn.npt.fs.thread.HandlerProcess;
  * @param <T>
  */
 public abstract class CachePool<T> {
+	/**
+	 * 时区偏移量。eg.beijin东8区=8*3600*1000=28800000ms
+	 */
+	private static long timeZoneOffset=TimeZone.getDefault().getRawOffset();
+	
 	/**
 	 * 详细数据
 	 */
@@ -278,7 +284,7 @@ public abstract class CachePool<T> {
 	 * @return
 	 */
 	protected int parseIndex(long time){
-		time+=28800000;
+		time+=timeZoneOffset;
 		long rs=time/this.blockInterval;
 		return (int) (rs%size);
 	}
@@ -327,4 +333,5 @@ public abstract class CachePool<T> {
 	 * @return
 	 */
 	public abstract JSONObject currentV2JSON();
+	
 }

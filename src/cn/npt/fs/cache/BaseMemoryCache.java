@@ -12,10 +12,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.greenpineyu.fel.context.FelContext;
 
 import cn.npt.db.event.BaseBS2DBHandler;
+import cn.npt.fs.alarm.IAlarmHandler;
+import cn.npt.fs.bean.AlarmSensor;
 import cn.npt.fs.bean.BSSensor;
 import cn.npt.fs.bean.CCSensor;
 import cn.npt.fs.config.CacheBlockCfg;
 import cn.npt.fs.config.CachePoolTreeCfg;
+import cn.npt.fs.event.AlarmHandler;
 import cn.npt.fs.event.SaveOLHandler;
 import cn.npt.fs.event.SensorHandler;
 /**
@@ -36,6 +39,14 @@ public class BaseMemoryCache {
 	 */
 	private boolean CCTroggleState;
 	/**
+	 * 警报传感器
+	 */
+	private List<AlarmSensor> alarmSensors;
+	/**
+	 * alarm执行控制开关
+	 */
+	private boolean alarmTroggleState;
+	/**
 	 * 缓存池配置参数
 	 */
 	private CachePoolTreeCfg cptc;
@@ -52,6 +63,9 @@ public class BaseMemoryCache {
 		this.isRoot=this.cptc.isRoot();
 		this.SensorFragments=new HashMap<Long, CachePool<?>>();
 		this.CCSensors=new ArrayList<CCSensor>();
+		this.CCTroggleState=false;
+		this.alarmSensors=new ArrayList<AlarmSensor>();
+		this.alarmTroggleState=false;
 	}
 
 	/**
@@ -70,43 +84,80 @@ public class BaseMemoryCache {
 			svp.setValue(sensorValue, time);
 			//log.info("sensorId:"+sensorId+" setValue:"+sensorValue+"  getValue:"+svp.getValue(time));
 		}
-		if(CCTroggleState){
-			for(CCSensor cSensor:CCSensors){
-				List<Long> cSensorIds=cSensor.getSensorIds();
-				FelContext ctx=cSensor.getFelCtx();
-				boolean flag=true;
-				for(Long cSensorId:cSensorIds){
-					Double v=sensorValues.get(cSensorId);
-					if(v==null){
-						v=(Double) SensorFragments.get(cSensorId).getValue(time);
-						if(v!=null){
-							//sensorValues.put(cSensorId, v);//暂时缓存!ccSensor不能缓存，sensorValues是引用
-							//log.info("[1-pool]time:"+new Date(time).toString()+"  sensorId:"+cSensorId+"  value:"+v);
-							ctx.set("_"+cSensorId, v);
-						}
-						else{//数据不齐全
-							flag=false;
-							break;
-						}
-					}
-					else{
-						//sensorValues.put(cSensorId, v);//暂时缓存
-						//log.info("[0-src]time:"+new Date(time).toString()+"  sensorId:"+cSensorId+"  value:"+v);
-						ctx.set("_"+cSensorId, v);
-					}
-				}
-				if(flag){
-					long sensorId=cSensor.getSensorId();
-					Double value=cSensor.eval(ctx);
-					CachePool cp=SensorFragments.get(sensorId);
-					cp.setValue(value, time);
-					//log.info("[0-pool-cc]time:"+new Date(time).toString()+"  sensorId:"+sensorId+"  value:"+SensorFragments.get(sensorId).getValue(time)+"sValue:"+value);
-				}
-			}
+		if(this.CCTroggleState){
+			executeCCSensor(time, sensorValues);
+		}
+		if(this.alarmTroggleState){
+			executeAlarmSensor(time, sensorValues);
 		}
 	} 
 	
-
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void executeCCSensor(long time,Map<Long,Double> sensorValues){
+		for(CCSensor cSensor:CCSensors){
+			List<Long> cSensorIds=cSensor.getSensorIds();
+			FelContext ctx=cSensor.getFelCtx();
+			boolean flag=true;
+			for(Long cSensorId:cSensorIds){
+				Double v=sensorValues.get(cSensorId);
+				if(v==null){
+					v=(Double) SensorFragments.get(cSensorId).getValue(time);
+					if(v!=null){
+						//sensorValues.put(cSensorId, v);//暂时缓存!ccSensor不能缓存，sensorValues是引用
+						//log.info("[1-pool]time:"+new Date(time).toString()+"  sensorId:"+cSensorId+"  value:"+v);
+						ctx.set("_"+cSensorId, v);
+					}
+					else{//数据不齐全
+						flag=false;
+						break;
+					}
+				}
+				else{
+					//sensorValues.put(cSensorId, v);//暂时缓存
+					//log.info("[0-src]time:"+new Date(time).toString()+"  sensorId:"+cSensorId+"  value:"+v);
+					ctx.set("_"+cSensorId, v);
+				}
+			}
+			if(flag){
+				long sensorId=cSensor.getSensorId();
+				Double value=cSensor.eval(ctx);
+				CachePool cp=SensorFragments.get(sensorId);
+				cp.setValue(value, time);
+				//log.info("[0-pool-cc]time:"+new Date(time).toString()+"  sensorId:"+sensorId+"  value:"+SensorFragments.get(sensorId).getValue(time)+"sValue:"+value);
+			}
+		}
+	}
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void executeAlarmSensor(long time,Map<Long,Double> sensorValues){
+		for(AlarmSensor aSensor:alarmSensors){
+			List<Long> aSensorIds=aSensor.getSensorIds();
+			List<Double> alarmValues=new ArrayList<Double>();
+			boolean flag=true;
+			for(Long aSensorId:aSensorIds){
+				Double v=sensorValues.get(aSensorId);
+				if(v==null){
+					v=(Double) SensorFragments.get(aSensorId).getValue(time);
+					if(v!=null){
+						alarmValues.add(v);
+					}
+					else{//数据不齐全
+						flag=false;
+						break;
+					}
+				}
+				else{
+					alarmValues.add(v);
+				}
+			}
+			if(flag){
+				long sensorId=aSensor.getSensorId();
+				Double value=aSensor.doCheck(alarmValues);
+				CachePool cp=SensorFragments.get(sensorId);
+				cp.setValue(value, time);
+			}
+		}
+	}
+	
 	public void addSensor(long sensorId){
 		if(this.cptc.isRoot()){
 			CacheBlockCfg cbCfg=new CacheBlockCfg(this.cptc.getBlockIntervalInMs(), this.cptc.getSize(), this.cptc.getfileHandler());
@@ -134,47 +185,175 @@ public class BaseMemoryCache {
 		this.cptc.resume();
 		
 	}
-	
 	/**
-	 * 1:从SensorFragments中移除sensorId对应的pool
-	 * <br>2:从CCSensors中移除sensorId的CCSensor（如果是CCSensor的话）
-	 * <br>3:递归调用该方法移除依赖该sensorId的CCSensor
+	 * 添加sensor到缓存池，但不加任何操作
 	 * @param sensorId
-	 * @return 是否为CCSensor
 	 */
-	public boolean removeSensor(long sensorId){
-		boolean isCCSensor=false;
-		System.out.println("delete sensorId:"+sensorId);
-		this.SensorFragments.remove(sensorId);
+	public void addSensorWithoutHandler(long sensorId){
+		if(this.cptc.isRoot()){
+			CacheBlockCfg cbCfg=new CacheBlockCfg(this.cptc.getBlockIntervalInMs(), this.cptc.getSize(), this.cptc.getfileHandler());
+			SensorValuePool pool=new SensorValuePool(sensorId, cbCfg,this.cptc.getDataDir());//
+			this.SensorFragments.put(sensorId, pool);
+		}
+	}
+	/**
+	 * 移除Sensor及依赖于它的CCSensor和alarmSensor(递归查找其依赖链，未作全面测试)
+	 * @param sensorId
+	 */
+	public void removeSensor(long sensorId){
+		//需要移除的依赖项
+		List<AlarmSensor> ases=new ArrayList<AlarmSensor>();
+		List<CCSensor> cses=new ArrayList<CCSensor>();
+		
+		//判断是否是alarmSensor
+		for(int i=0;i<this.alarmSensors.size();i++){
+			AlarmSensor as=this.alarmSensors.get(i);
+			if(as.getSensorId()==sensorId){//该sensor是alarmSensor
+				removeAlarmSensor(sensorId, i, ases);
+				for(AlarmSensor item:ases){
+					this.alarmSensors.remove(item);
+				}
+				return;
+			}
+		}
+				
+		//判断是否是ccSensor
 		for(int i=0;i<this.CCSensors.size();i++){
 			CCSensor cs=this.CCSensors.get(i);
 			if(cs.getSensorId()==sensorId){//该sensor是CCSensor
-				this.CCSensors.remove(cs);
-				//i--;
-				isCCSensor=true;
-				break;
+				removeCCSensor(sensorId, i, ases, cses);
+				
+				for(AlarmSensor item:ases){
+					this.alarmSensors.remove(item);
+				}
+				
+				for(CCSensor item:cses){
+					this.CCSensors.remove(item);
+				}
+				return;
 			}
-			
 		}
-		for(int i=0;i<this.CCSensors.size();i++){
-			CCSensor cs=this.CCSensors.get(i);
-			for(long sId:cs.getSensorIds()){
+		//普通Sensor
+		_removeSensor(sensorId, ases, cses);
+		for(AlarmSensor item:ases){
+			this.alarmSensors.remove(item);
+		}
+		
+		for(CCSensor item:cses){
+			this.CCSensors.remove(item);
+		}
+	}
+	/**
+	 * alarmSensor,ccSensor都可以依赖于Sensor，所以在移除其同时要移除依赖于它的alarmSensor,ccSensor
+	 * @param sensorId
+	 * @param ases
+	 * @param cses
+	 */
+	private void _removeSensor(long sensorId,List<AlarmSensor> ases,List<CCSensor> cses){
+		this.SensorFragments.remove(sensorId);
+		//System.out.println("normal:"+sensorId);
+		//移除依赖于它的alarmSensor
+		for(int i=0;i<this.alarmSensors.size();i++){
+			AlarmSensor as=this.alarmSensors.get(i);
+			for(long sId:as.getSensorIds()){
 				if(sId==sensorId){
-					if(removeSensor(cs.getSensorId())){
-						i--;
-					}
+					removeAlarmSensor(as.getSensorId(),i,ases);
 					break;
 				}
 			}	
 		}
-		return isCCSensor;
+		
+		//移除依赖于它的ccSensor
+		for(int i=0;i<this.CCSensors.size();i++){
+			CCSensor cs=this.CCSensors.get(i);
+			for(long sId:cs.getSensorIds()){
+				if(sId==sensorId){
+					removeCCSensor(cs.getSensorId(),i,ases,cses);
+					break;
+				}
+			}	
+		}
 	}
-	
+	/**
+	 * ccSensor可以依赖于ccSensor,Sensor,所以在移除其同时要移除依赖于它的alarmSensor,ccSensor
+	 * @param sensorId
+	 * @param index
+	 * @param ases 要移除的alarmSensor
+	 * @param cses 要移除的ccSensor
+	 */
+	private void removeCCSensor(long sensorId,int index,List<AlarmSensor> ases,List<CCSensor> cses){
+		this.SensorFragments.remove(sensorId);
+		if(!cses.contains(this.CCSensors.get(index))){
+			cses.add(this.CCSensors.get(index));
+			//System.out.println("cc:"+sensorId);
+		}
+		
+		//移除依赖于它的alarmSensor
+		for(int i=0;i<this.alarmSensors.size();i++){
+			AlarmSensor as=this.alarmSensors.get(i);
+			for(long sId:as.getSensorIds()){
+				if(sId==sensorId){
+					removeAlarmSensor(as.getSensorId(),i,ases);
+					break;
+				}
+			}	
+		}
+		//移除依赖于它的ccSensor
+		for(int i=0;i<this.CCSensors.size();i++){
+			CCSensor cs=this.CCSensors.get(i);
+			for(long sId:cs.getSensorIds()){
+				if(sId==sensorId){
+					removeCCSensor(cs.getSensorId(),i,ases,cses);
+					break;
+				}
+			}	
+		}
+	}
+
+	/**
+	 * alarmSensor可以依赖于alarmSensor，ccSensor,Sensor,所以在移除其同时要移除依赖于它的alarmSensor
+	 * @param sensorId
+	 * @param index
+	 * @param ases 要移除的alarmSensor
+	 * @return 
+	 */
+	private List<AlarmSensor> removeAlarmSensor(long sensorId,int index,List<AlarmSensor> ases){
+		this.SensorFragments.remove(sensorId);
+		if(!ases.contains(this.alarmSensors.get(index))){
+			ases.add(this.alarmSensors.get(index));
+			//System.out.println("alarm:"+sensorId);
+		}
+		
+		//移除依赖于它的alarmSensor
+		for(int i=0;i<this.alarmSensors.size();i++){
+			AlarmSensor as=this.alarmSensors.get(i);
+			for(long sId:as.getSensorIds()){
+				if(sId==sensorId){
+					removeAlarmSensor(as.getSensorId(),i,ases);
+					break;
+				}
+			}	
+		}
+		return ases;
+	}
 	public void addCCSensor(CCSensor ccSensor){
 		this.CCSensors.add(ccSensor);
 		addSensor(ccSensor.getSensorId());
 	}
-	
+	/**
+	 * 添加报警虚拟传感器
+	 * @param alarmSensor
+	 * @param alarmHandlers 警报处理Handler
+	 * @param sensorInfo 监控的传感器信息（eg:xx车间xx组xx设备xx传感器）
+	 */
+	public void addAlarmSensor(AlarmSensor alarmSensor,List<IAlarmHandler> alarmHandlers,String sensorInfo){
+		this.alarmSensors.add(alarmSensor);
+		addSensorWithoutHandler(alarmSensor.getSensorId());
+		//add alarm handler
+		List<Long> almSensorIds=alarmSensor.getSensorIds();
+		AlarmHandler ah=new AlarmHandler(sensorInfo,almSensorIds.get(almSensorIds.size()-1),alarmSensor.getDuration(), alarmHandlers);
+		addHandler(alarmSensor.getSensorId(), ah, 0);
+	}
 	
 	/**
 	 * 添加用户自定义事件，处理基本统计数据
@@ -348,6 +527,13 @@ public class BaseMemoryCache {
 		CCSensors = cCSensors;
 	}
 
+	/**
+	 * 设置警报处理开关
+	 * @param cCTroggleState
+	 */
+	public void setAlarmTroggleState(boolean alarmTroggleState) {
+		this.alarmTroggleState = alarmTroggleState;
+	}
 	public Map<Long, CachePool<?>> getSensorFragments() {
 		return SensorFragments;
 	}
@@ -390,28 +576,5 @@ public class BaseMemoryCache {
 		CacheBlockCfg cbc=new CacheBlockCfg(this.cptc.getBlockIntervalInMs(), this.cptc.getSize(), this.cptc.getfileHandler());
 		return cbc;
 	}
-	/*public static void main(String[] args) {
-		BaseMemoryCache cache=new BaseMemoryCache("cache.json");
-		cache.addSensor(1L);
-		cache.addSensor(2L);
-		cache.addSensor(3L);
-		
-		CCSensor cs=new CCSensor(4L, "{1}+{2}");
-		cache.addCCSensor(cs);
-		
-		cs=new CCSensor(5L, "{1}+{2}");
-		cache.addCCSensor(cs);
-		
-		cs=new CCSensor(6L, "{3}+{4}");
-		cache.addCCSensor(cs);
-		
-		cs=new CCSensor(7L, "{6}+{4}");
-		cache.addCCSensor(cs);
-		
-		cache.removeSensor(1);
-		cache.removeSensor(5);
-		cache.removeSensor(6);
-		cache.removeSensor(7);
-		
-	}*/
+	
 }

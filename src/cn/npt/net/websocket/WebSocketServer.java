@@ -99,7 +99,7 @@ public class WebSocketServer extends BaseSendServer{
 	@Override
 	public void start() {
 		try {
-			init(port, ssl, webSocketPath);;
+			init(port, ssl, webSocketPath);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

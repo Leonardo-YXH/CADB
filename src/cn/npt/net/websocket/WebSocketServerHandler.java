@@ -56,7 +56,7 @@ import static io.netty.handler.codec.http.HttpVersion.*;
 /**
  * <br>实时显示传感器的数据,目前只支持单个缓存池取数据,所以尽量同一厂间的传感器数据放在同一缓存池中
  * <br>前台websocket访问数据格式{cmd:getSensorValue,depth:0,timeInterval:1000,sensorIds:[...]}
- * <br>cmd:请求的类型，目前包括getSensorValue,getStartTime,getSensorCount
+ * <br>cmd:请求的类型，目前包括getSensorValue,updateSensorValue,getStartTime,getSensorCount
  * <br>depth:0--原始数据;1--第一层BS;2--第二层BS;3--第三层BS
  * <br>timeInterval:传输频率,单位ms
  * <br>sensorIds:需要显示的传感器ID
@@ -68,7 +68,14 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     private String webSocketPath;
     private WebSocketServerHandshaker handshaker;
     private Timer timer;
+    /**
+     * 定时刷新
+     */
     private WebSocketTimerTask timerTask;
+    /**
+     * 有数据才刷新
+     */
+    private WebSocketTimerTask1 timerTask1;
     private boolean ssl;
     
     private static Logger log=Logger.getLogger(WebSocketServerHandler.class);
@@ -174,6 +181,9 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 	        	case "getSensorValue"://主要
 	        		getSensorValue(reqObj, ctx);
 	        		break;
+	        	case "updateSensorValue"://主要
+	        		updateSensorValue(reqObj, ctx);
+	        		break;
 	        	case "getCachePoolDepth":
 	        		getCachePoolDepth(reqObj, ctx);
 	        		break;
@@ -221,6 +231,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 	 * <br>sensorIds:需要显示的传感器ID
      * @param reqObj
      * @param ctx
+     * @see #updateSensorValue(JSONObject, ChannelHandlerContext)
      */
     private void getSensorValue(JSONObject reqObj,ChannelHandlerContext ctx){
     	if(reqObj.containsKey("timeInterval")&&reqObj.containsKey("depth")&&reqObj.containsKey("sensorIds")){
@@ -232,6 +243,9 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     			if(this.timerTask!=null){
 	            	this.timerTask.cancel();
 	            }
+    			if(this.timerTask1!=null){//
+    				this.timerTask1.cancel();
+    			}
 	            this.timerTask=new WebSocketTimerTask(ctx, reqObj);
 	            this.timer.schedule(this.timerTask, 0, timeInterval);
     		}
@@ -241,6 +255,39 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     		ctx.writeAndFlush(new TextWebSocketFrame("未知的请求格式,您可能是想发送{cmd:'getSensorValue',depth:0,timeInterval:1000,sensorIds:[...]}"));
     	}
     }
+    /**
+     * 有新数据才推送
+     * @param reqObj
+     * @param ctx
+     * @see #getSensorValue(JSONObject, ChannelHandlerContext)
+     */
+    private void updateSensorValue(JSONObject reqObj,ChannelHandlerContext ctx){
+    	if(reqObj.containsKey("timeInterval")&&reqObj.containsKey("depth")&&reqObj.containsKey("sensorIds")){
+    		int timeInterval=reqObj.getIntValue("timeInterval");
+    		if(timeInterval<50){
+    			ctx.writeAndFlush(new TextWebSocketFrame("请求的频率过高,参数timeInterval必须大于等于50"));
+    		}
+    		else{
+    			if(this.timerTask1!=null){
+    				this.timerTask1.cancel();
+    			}
+    			if(this.timerTask!=null){
+    				this.timerTask.cancel();
+    			}
+    			this.timerTask1=new WebSocketTimerTask1(ctx, reqObj);
+    			this.timer.schedule(this.timerTask1, 0, timeInterval);
+    		}
+    	}
+    	else{
+    		//log.warn("");
+    		ctx.writeAndFlush(new TextWebSocketFrame("未知的请求格式,您可能是想发送{cmd:'getSensorValue',depth:0,timeInterval:1000,sensorIds:[...]}"));
+    	}
+    }
+    /**
+     * 实时推送当前value
+     * @author Leonardo
+     *
+     */
     private class WebSocketTimerTask extends TimerTask{
     	private ChannelHandlerContext ctx;
     	private JSONObject reqObj;
@@ -286,10 +333,10 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 		@Override
 		public void run() {
 			if(this.errorInfo.length()==0){//无错误信息
-				JSONArray rs=new JSONArray();
+				JSONObject rs=new JSONObject();
 				
 				for(CachePool<?> pool:this.pools){
-					rs.add(pool.currentV2JSON());
+					rs.putAll(pool.currentV2JSON());
 				}
 				ctx.channel().writeAndFlush(new TextWebSocketFrame(rs.toJSONString()));
 			}
@@ -298,6 +345,79 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
 				this.cancel();
 			}
 		}
+    }
+    /**
+     * 实时推送最新value（有更新就推送，没有就不处理）
+     * @author Leonardo
+     *
+     */
+    private class WebSocketTimerTask1 extends TimerTask{
+    	private ChannelHandlerContext ctx;
+    	private JSONObject reqObj;
+    	private JSONArray sensorIds;
+    	private int depth;
+    	private final List<CachePool<?>> pools;//只读模式
+    	/**
+    	 * 上一次发送的索引，用来判断数据是否有更新
+    	 */
+    	private List<Integer> sensorPreviousIndexs;
+    	private StringBuilder errorInfo;
+    	public WebSocketTimerTask1(ChannelHandlerContext ctx, JSONObject reqObj){
+    		this.ctx=ctx;
+    		this.reqObj=reqObj;
+    		this.sensorIds=this.reqObj.getJSONArray("sensorIds");
+    		this.depth=this.reqObj.getIntValue("depth");
+    		this.pools=new ArrayList<CachePool<?>>();
+    		this.sensorPreviousIndexs=new ArrayList<Integer>();
+    		this.errorInfo=new StringBuilder();
+    		for(int i=0;i<sensorIds.size();i++){
+    			boolean sensorExist=false;
+    			long sensorId=sensorIds.getLongValue(i);
+    			
+    			for(BaseMemoryCache cachePool:CachePoolFactory.getCachePools().values()){
+    				CachePool<?> cp=cachePool.getCachePool(sensorId, depth);
+    				if(cp!=null){
+    					this.pools.add(cp);
+    					this.sensorPreviousIndexs.add(cp.getIndex());
+    					sensorExist=true;
+    					break;
+    				}
+    			}
+    			if(!sensorExist){
+    				if(depth==0){
+    					this.errorInfo.append("sensorId:")
+    					.append(sensorId)
+    					.append(" 不存在\n");
+    				}
+    				else{//逻辑不完备(假定sensorId存在)
+    					this.errorInfo.append("sensorId:")
+    					.append(sensorId)
+    					.append(" 不存在或者不存在深度为")
+    					.append(depth)
+    					.append("的统计池\n");
+    				}
+    			}
+    		}
+    	}
+    	@Override
+    	public void run() {
+    		if(this.errorInfo.length()==0){//无错误信息
+    			JSONObject rs=new JSONObject();
+    			
+    			for(int i=0;i<this.pools.size();i++){
+    				CachePool<?> pool=this.pools.get(i);
+    				if(!this.sensorPreviousIndexs.get(i).equals(pool.getIndex())){
+    					rs.putAll(pool.currentV2JSON());
+    				}
+    				
+    			}
+    			ctx.channel().writeAndFlush(new TextWebSocketFrame(rs.toJSONString()));
+    		}
+    		else{
+    			ctx.channel().writeAndFlush(new TextWebSocketFrame(this.errorInfo.toString()));
+    			this.cancel();
+    		}
+    	}
     }
     
     private void getCachePoolDepth(JSONObject reqObj,ChannelHandlerContext ctx){

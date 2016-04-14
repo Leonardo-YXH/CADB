@@ -12,7 +12,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.io.Files;
+import com.greenpineyu.fel.FelEngine;
+import com.greenpineyu.fel.context.FelContext;
 
 import cn.npt.fs.CachePoolFactory;
 import cn.npt.fs.bean.BSSensor;
@@ -24,13 +27,14 @@ import cn.npt.net.tcp.SimpleTCPServer;
 import cn.npt.net.websocket.WebSocketServer;
 import cn.npt.fs.service.SensorValueFileService;
 import cn.npt.util.data.FileOperator;
+import cn.npt.util.el.FelEngineHelp;
 import cn.npt.util.math.SensorFileKit;
 
 public class FSTest {
 	public static double model=0;
 	public static void main(String[] args){
 		//System.out.println(System.currentTimeMillis());
-		test8();
+		//test9();
 		//test3();
 		//test();
 		//emitSensorId();
@@ -46,6 +50,15 @@ public class FSTest {
 		//TCPClient.unitTest("127.0.0.1", 8080);
 		
 		//test8();
+		Map<String,Object> item=new HashMap<String, Object>();
+		BSSensor bs=new BSSensor(Arrays.asList(1d,2d), 0, 1);
+		item.put("1", bs);
+		JSONObject obj=new JSONObject();
+		obj.putAll(item);
+		JSONObject obj1=new JSONObject();
+		obj1.putAll(obj);
+		System.out.println(obj.toJSONString());
+		System.out.println(obj1.toJSONString());
 	}
 	/**
 	 * 打印文件中的Sensorvalue
@@ -336,5 +349,53 @@ public class FSTest {
 		SimpleTCPServer server=new SimpleTCPServer(8180, handler, false, "数据采集服务器");
 		bootstrap.addServer(server);
 	}
+	public static int test9(){
+		double var1=0,var2=0;
+		System.out.println(alarm2dim(-1, -11));
+		return 0;
+	}
 
+	private static int alarm2dim(double var1,double var2){
+		String elStr=""
++"if(var1<=0){"
++"if(var2<=-10){"
++"return-1;"
++"}"
++"elseif(var2<=0){"
++"return0;"
++"}"
++"else{"
++"return1;"
++"}"
++"}"
++"elseif(var1<=10){"
++"if(var2<=0){"
++"return-1;"
++"}"
++"elseif(var2<=10){"
++"return0;"
++"}"
++"else{"
++"return1;"
++"}"
++"}"
++"else{"
++"if(var2<=10){"
++"return-1;"
++"}"
++"elseif(var2<=20){"
++"return0;"
++"}"
++"else{"
++"return1;"
++"}"
++"}";
+		elStr="var1<=0?0:-1";
+		FelEngine engine=FelEngineHelp.getInstance();
+		FelContext ctx=engine.getContext();
+		ctx.set("var1", var1);
+		ctx.set("var2", var2);
+		Object rs=engine.compile(elStr, ctx).eval(ctx);
+		return Integer.parseInt(rs.toString());
+	}
 }
