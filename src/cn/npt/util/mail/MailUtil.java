@@ -16,21 +16,25 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
+import cn.npt.util.data.PropertyFileParse;
+
 import com.sun.mail.util.MailSSLSocketFactory;
 
 public class MailUtil {
 
+	private static PropertyFileParse pfp=PropertyFileParse.getInstance("cadb.properties");
+	
 	private static final String HOST = "smtp.163.com";
 	private static final int PORT = 465;
 	private static final String PROTOCOL = "smtp";
 	/**
 	 * 系统发件人邮箱
 	 */
-	private static final String Account = "zhigongchang@163.com";
+	private static final String Account = pfp.getValue("mail", "account");
 	/**
 	 * 邮箱登录密码
 	 */
-	private static final String Passwd ="jiandan123" ;
+	private static final String Passwd =pfp.getValue("mail", "password");
 	/**
 	 * 获取Session
 	 * @return
