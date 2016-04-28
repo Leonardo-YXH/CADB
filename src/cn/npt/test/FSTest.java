@@ -50,15 +50,12 @@ public class FSTest {
 		//TCPClient.unitTest("127.0.0.1", 8080);
 		
 		//test8();
-		Map<String,Object> item=new HashMap<String, Object>();
-		BSSensor bs=new BSSensor(Arrays.asList(1d,2d), 0, 1);
-		item.put("1", bs);
-		JSONObject obj=new JSONObject();
-		obj.putAll(item);
-		JSONObject obj1=new JSONObject();
-		obj1.putAll(obj);
-		System.out.println(obj.toJSONString());
-		System.out.println(obj1.toJSONString());
+		
+		System.out.println((1L<<48)+(1L<<32)+(1L<<16));
+		System.out.println((1L<<48)+(1L<<32)+(4L<<16));
+		System.out.println(0x7fffffffffff0000L);
+		System.out.println(0x7fffffff00000000L);
+		System.out.println(0x7fff000000000000L);
 	}
 	/**
 	 * 打印文件中的Sensorvalue

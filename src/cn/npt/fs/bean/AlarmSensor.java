@@ -27,12 +27,16 @@ public class AlarmSensor {
 	 * 条件表达式
 	 */
 	private IThresholdValue<Double> thresholdCondition;
+	/**
+	 * 传感器信息
+	 */
+	private String sensorInfo;
 	
-
 	public AlarmSensor(long sensorId, List<Long> sensorIds,long duration,
-			IThresholdValue<Double> thresholdCondition) {
+			IThresholdValue<Double> thresholdCondition,String sensorInfo) {
 		this.sensorId = sensorId;
 		this.sensorIds = sensorIds;
+		this.sensorInfo=sensorInfo;
 		this.duration=duration;
 		this.thresholdCondition = thresholdCondition;
 	}
@@ -71,6 +75,14 @@ public class AlarmSensor {
 
 	public void setDuration(long duration) {
 		this.duration = duration;
+	}
+
+	public String getSensorInfo() {
+		return sensorInfo;
+	}
+
+	public void setSensorInfo(String sensorInfo) {
+		this.sensorInfo = sensorInfo;
 	}
 	
 	

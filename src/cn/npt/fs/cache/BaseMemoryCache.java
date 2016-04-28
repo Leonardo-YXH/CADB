@@ -21,6 +21,7 @@ import cn.npt.fs.config.CachePoolTreeCfg;
 import cn.npt.fs.event.AlarmHandler;
 import cn.npt.fs.event.SaveOLHandler;
 import cn.npt.fs.event.SensorHandler;
+import cn.npt.util.algorithm.graph.UnionFind;
 /**
  * 缓存BS结构的数据
  * @author Leonardo 
@@ -336,6 +337,11 @@ public class BaseMemoryCache {
 		}
 		return ases;
 	}
+	/**
+	 * 添加之前需要对所有的CCSensor做成环检测，如果有环存在则不应该添加
+	 * @param ccSensor
+	 * @see UnionFind 环检测
+	 */
 	public void addCCSensor(CCSensor ccSensor){
 		this.CCSensors.add(ccSensor);
 		addSensor(ccSensor.getSensorId());
@@ -344,14 +350,12 @@ public class BaseMemoryCache {
 	 * 添加报警虚拟传感器
 	 * @param alarmSensor
 	 * @param alarmHandlers 警报处理Handler
-	 * @param sensorInfo 监控的传感器信息（eg:xx车间xx组xx设备xx传感器）
 	 */
-	public void addAlarmSensor(AlarmSensor alarmSensor,List<IAlarmHandler> alarmHandlers,String sensorInfo){
+	public void addAlarmSensor(AlarmSensor alarmSensor,List<IAlarmHandler> alarmHandlers){
 		this.alarmSensors.add(alarmSensor);
 		addSensorWithoutHandler(alarmSensor.getSensorId());
 		//add alarm handler
-		List<Long> almSensorIds=alarmSensor.getSensorIds();
-		AlarmHandler ah=new AlarmHandler(sensorInfo,almSensorIds.get(almSensorIds.size()-1),alarmSensor.getDuration(), alarmHandlers);
+		AlarmHandler ah=new AlarmHandler(alarmSensor, alarmHandlers);
 		addHandler(alarmSensor.getSensorId(), ah, 0);
 	}
 	
