@@ -15,7 +15,9 @@
  */
 package cn.npt.net.websocket;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -362,6 +364,8 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     	 */
     	private List<Integer> sensorPreviousIndexs;
     	private StringBuilder errorInfo;
+    	
+    	private SimpleDateFormat sdf;
     	public WebSocketTimerTask1(ChannelHandlerContext ctx, JSONObject reqObj){
     		this.ctx=ctx;
     		this.reqObj=reqObj;
@@ -370,6 +374,7 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     		this.pools=new ArrayList<CachePool<?>>();
     		this.sensorPreviousIndexs=new ArrayList<Integer>();
     		this.errorInfo=new StringBuilder();
+    		this.sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     		for(int i=0;i<sensorIds.size();i++){
     			boolean sensorExist=false;
     			long sensorId=sensorIds.getLongValue(i);
@@ -407,11 +412,14 @@ public class WebSocketServerHandler extends SimpleChannelInboundHandler<Object> 
     			for(int i=0;i<this.pools.size();i++){
     				CachePool<?> pool=this.pools.get(i);
     				if(!this.sensorPreviousIndexs.get(i).equals(pool.getIndex())){
+    					this.sensorPreviousIndexs.set(i, pool.getIndex());
     					rs.putAll(pool.currentV2JSON());
+    					rs.put("time", this.sdf.format(new Date(pool.getCurrentTime())));
     				}
-    				
     			}
-    			ctx.channel().writeAndFlush(new TextWebSocketFrame(rs.toJSONString()));
+    			if(!rs.isEmpty()){
+    				ctx.channel().writeAndFlush(new TextWebSocketFrame(rs.toJSONString()));
+    			}
     		}
     		else{
     			ctx.channel().writeAndFlush(new TextWebSocketFrame(this.errorInfo.toString()));

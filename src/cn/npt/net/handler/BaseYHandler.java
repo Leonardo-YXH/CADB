@@ -9,6 +9,7 @@ import io.netty.channel.ChannelInboundHandler;
  *
  */
 public abstract class BaseYHandler extends ChannelHandlerAdapter implements ChannelInboundHandler {
+	
 	/**
 	 * 深度克隆
 	 * @return

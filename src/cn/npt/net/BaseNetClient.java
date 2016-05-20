@@ -41,10 +41,7 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 	 * Handler执行状态
 	 */
 	protected ChannelFuture future;
-	/**
-	 * 
-	 */
-	protected boolean closed;
+	
 	/**
 	 * 启动器
 	 */
@@ -53,7 +50,10 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 	 * 客户端名称
 	 */
 	protected String clientName;
-	
+	/**
+	 * 客户端状态
+	 */
+	protected NPTChannelStatus status;
 	
 	private static Logger log=Logger.getLogger(BaseNetClient.class);
 	/**
@@ -69,6 +69,7 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 		this.remotePort=remotePort;
 		this.handler=handler;
 		this.ssl=ssl;
+		this.status=NPTChannelStatus.CLOSED;
 		if(clientName!=null&&!clientName.isEmpty()){
 			this.clientName=clientName;
 		}
@@ -76,12 +77,12 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 			this.clientName="BaseNetClient";
 		}
 		
-		this.group=new NioEventLoopGroup();
+		this.group=new NioEventLoopGroup(2);
 		this.bootstrap=new Bootstrap();
 		this.bootstrap.group(group);
 	}
 	public BaseNetClient() {
-		// TODO Auto-generated constructor stub
+		this.status=NPTChannelStatus.CLOSED;
 	}
 	public abstract void init() throws Exception;
 	
@@ -96,18 +97,19 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 	@Override
 	public void run() {
 		try {
-			init();
 			log.info(this.clientName+" connecting to "+this.remoteAddr+":"+this.remotePort);
+			init();
+			//this.future.channel().closeFuture().sync();
 		} catch (Exception e) {
 			log.error(this.clientName+" connecting to "+this.remoteAddr+":"+this.remotePort+" failed");
 			log.error(e.getMessage());
 			e.printStackTrace();
 		}
-		finally{
-			this.closed=true;
-			this.group.shutdownGracefully();
-			log.info(this.clientName+"["+this.future.channel().localAddress().toString()+"] shutdownGracefully...");
-		}
+//		finally{
+//			this.status=NPTChannelStatus.CLOSED;
+//			this.group.shutdownGracefully();
+//			log.info(this.clientName+"["+this.future.channel().localAddress().toString()+"] shutdownGracefully...");
+//		}
 
 	}
 	/**
@@ -118,10 +120,10 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 		this.future.channel().writeAndFlush(msg);
 	}
 	/**
-	 * 关闭连接
+	 * 主动关闭连接
 	 */
 	public void close(){
-		this.closed=true;
+		this.status=NPTChannelStatus.CLOSED_INITIATIVE;
 		this.future.channel().close();
 	}
 }

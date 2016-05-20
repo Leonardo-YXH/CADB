@@ -602,4 +602,17 @@ public class FourierTransform {
     	}
     	return data;
     }
+    /**
+     * 将Double数组转成ComplexNumber数组。real=v,img=0
+     * @param src
+     * @return
+     */
+    public static ComplexNumber[] double2Complex(Double[] src){
+    	ComplexNumber[] data=new ComplexNumber[src.length];
+    	for(int i=0;i<src.length;i++){
+    		ComplexNumber cn=new ComplexNumber(src[i], 0);
+    		data[i]=cn;
+    	}
+    	return data;
+    }
 }

@@ -38,10 +38,10 @@ public class EchoWebSocketClientHandler extends BaseWebSocketClientHandler {
 	}
 	@Override
 	public void doReceive(String text) {
-		//System.out.println(text);
+		System.out.println(text);
 		JSONArray arr=JSONArray.parseArray(text);
 		this.robotcontent.addAll(arr);
-		System.out.println("========="+filePath+" size:"+this.robotcontent.size());
+		//System.out.println("========="+filePath+" size:"+this.robotcontent.size());
 	}
 
 	@Override

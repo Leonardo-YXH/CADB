@@ -1,7 +1,13 @@
 package cn.npt.net.tcp;
 
+import java.util.concurrent.TimeUnit;
+
 import com.alibaba.fastjson.JSONObject;
 
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -14,6 +20,7 @@ import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.CharsetUtil;
 import cn.npt.net.BaseNetClient;
+import cn.npt.net.NPTChannelStatus;
 import cn.npt.net.handler.BaseYHandler;
 import cn.npt.net.tcp.test.EchoHandler;
 /**
@@ -61,7 +68,17 @@ public class SimpleTCPClient extends BaseNetClient {
                      if (sslCtx != null) {
                          p.addLast(sslCtx.newHandler(ch.alloc(), remoteAddr, remotePort));
                      }
-                     //p.addLast(new LoggingHandler(LogLevel.INFO));
+                     
+                     p.addFirst(new ChannelInboundHandlerAdapter(){
+                    	 @Override
+                         public void channelInactive(ChannelHandlerContext ctx) throws Exception {//断开的时候检测重连
+                             super.channelInactive(ctx);
+                             if(!status.equals(NPTChannelStatus.CLOSED_INITIATIVE)){//如果不是主动关闭则需重连
+                            	 ctx.channel().eventLoop().schedule(new reConnect(), 5, TimeUnit.SECONDS);//5秒检测重连
+                             }
+                    	 }
+                     });
+                     
                      p.addLast(new StringDecoder(CharsetUtil.UTF_8));
                      p.addLast(new StringEncoder(CharsetUtil.UTF_8));
                  	if(handler.isSharable()){
@@ -72,11 +89,30 @@ public class SimpleTCPClient extends BaseNetClient {
                  	}
                  }
              });
-        this.future=this.bootstrap.connect(remoteAddr, remotePort);
-        this.future.channel().closeFuture().sync();
+        new Thread(new reConnect()).start();
 	}
+
+	private class reConnect implements Runnable{
+
+		@Override
+		public void run() {
+			future=bootstrap.connect(remoteAddr, remotePort);
+			future.addListener(new ChannelFutureListener() {
+	            public void operationComplete(ChannelFuture f) throws Exception {
+	                if (f.isSuccess()) {
+	                	future=f;
+	                }
+	                else{
+	                	f.channel().eventLoop().schedule(new reConnect(), 1, TimeUnit.SECONDS);
+	                }
+	            }
+	        });
+		}
+		
+	}
+	
 	public static void main(String[] args) {
-		SimpleTCPClient client=new SimpleTCPClient("192.168.20.84", 8180, new EchoHandler(1), false, "clientName");
+		SimpleTCPClient client=new SimpleTCPClient("192.168.20.84", 8008, new EchoHandler(1), false, "clientName");
 		
 		new Thread(client).start();
 		
@@ -91,9 +127,10 @@ public class SimpleTCPClient extends BaseNetClient {
 		values.put("2", 1);
 		values.put("3", 5);
 		JSONObject obj=new JSONObject();
+		int i=0;
 		while(true){
 			try {
-				Thread.sleep(500);
+				Thread.sleep(1000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 				break;
@@ -102,11 +139,16 @@ public class SimpleTCPClient extends BaseNetClient {
 			obj.put("time", time);
 			obj.put("values", values);
 			client.send(obj.toJSONString());
-			if(client.closed){
+//			if(client.status.equals(NPTChannelStatus.CLOSED)){
+//				break;
+//			}
+			time+=2000;
+			i++;
+			if(i>5){
+				client.close();
 				break;
 			}
-			time+=2000;
-			//client.close();
+			
 		}
 	}
 }

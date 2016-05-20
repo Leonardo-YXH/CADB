@@ -1,7 +1,5 @@
 package cn.npt.net.tcp;
 
-import java.util.Arrays;
-
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -15,7 +13,7 @@ import io.netty.handler.ssl.util.SelfSignedCertificate;
 import io.netty.util.CharsetUtil;
 import cn.npt.net.BaseNetServer;
 import cn.npt.net.handler.BaseYHandler;
-import cn.npt.net.handler.SimpleTCPClientHandler;
+import cn.npt.net.handler.SimpleTCPServerHandler;
 /**
  * tcp服务器
  * @author Leonardo
@@ -93,7 +91,7 @@ public class SimpleTCPServer extends BaseNetServer {
 	}
 	public static void main(String[] args) {
 		//EchoInbound handler=new EchoInbound(1);
-		SimpleTCPClientHandler handler=new SimpleTCPClientHandler("cache.properties", Arrays.asList(1L));
+		SimpleTCPServerHandler handler=new SimpleTCPServerHandler();
 		SimpleTCPServer server=new SimpleTCPServer(8008, handler, false, "localserver");
 		new Thread(server).start();
 		try {

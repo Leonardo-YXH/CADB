@@ -5,7 +5,11 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import com.alibaba.fastjson.JSONObject;
-
+/**
+ * 数据格式{time:"",values:[sensorId_1:"",...,sensorId_N:""]}
+ * @author Leonardo
+ *
+ */
 public class SimpleTCPServerHandler extends BaseTCPServerHandler {
 
 	@Override

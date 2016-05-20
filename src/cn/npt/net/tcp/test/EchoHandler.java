@@ -7,11 +7,10 @@ import cn.npt.net.handler.BaseTCPClientHandler;
 import cn.npt.net.handler.BaseYHandler;
 import io.netty.channel.ChannelHandlerContext;
 
-public class EchoHandler extends BaseTCPClientHandler {
+public class EchoHandler extends BaseYHandler {
 
 	private int id;
 	public EchoHandler(int id){
-		super("cache.properties", Arrays.asList(1l));
 		this.id=id;
 	}
 	@Override
@@ -25,15 +24,9 @@ public class EchoHandler extends BaseTCPClientHandler {
 	public void channelActive(ChannelHandlerContext paramChannelHandlerContext) throws Exception {
 		System.out.println("connected success");
 	}
-	@Override
-	public <T> List<T> filter(List<T> src) {
-		// TODO Auto-generated method stub
-		return src;
-	}
-	@Override
-	public boolean convert(Object msg) {
-		// TODO Auto-generated method stub
-		return true;
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+			throws Exception {
+		System.out.println("连接异常，已断开。。。");
 	}
 	@Override
 	public BaseYHandler deepClone() {

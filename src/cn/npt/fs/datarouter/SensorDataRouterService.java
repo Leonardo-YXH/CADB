@@ -48,13 +48,14 @@ public class SensorDataRouterService {
 		BaseMemoryCache cache=CachePoolFactory.getCachePool(sensorId);
 		if(cache!=null){
 			rs=cache.getSensorValue(sensorId, time, size);
-			if(rs.size()<size){//从文件中获取余下的数据
+			if(rs.size()<size){//从文件中获取余下的数据(???)
 				time-=rs.size()*cache.getCachePoolCfg().blockInterval;
 				size-=rs.size();
-				rs.addAll(SensorValueFileService.getSensorValue(sensorId, time, size));
+				List<Double> subRS=SensorValueFileService.getSensorValue(sensorId, time, size);
+				subRS.addAll(rs);
+				return subRS;
 			}
 		}
-		
 		return rs;
 	}
 	/**
