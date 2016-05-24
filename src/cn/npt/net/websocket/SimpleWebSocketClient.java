@@ -22,6 +22,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.log4j.Logger;
+
 import cn.npt.net.BaseNetClient;
 import cn.npt.net.NPTChannelStatus;
 import cn.npt.net.handler.BaseYHandler;
@@ -29,6 +31,7 @@ import cn.npt.net.handler.test.EchoWebSocketClientHandler;
 
 public class SimpleWebSocketClient extends BaseNetClient {
 
+	private Logger log=Logger.getLogger(SimpleWebSocketClient.class);
 	public SimpleWebSocketClient(String remoteAddr, int remotePort,
 			BaseYHandler wsChannelHandler, boolean ssl,
 			String clientName) {
@@ -93,6 +96,7 @@ public class SimpleWebSocketClient extends BaseNetClient {
 	                	future=f;
 	                }
 	                else{
+	                	log.info("正在重连到server["+remoteAddr+":"+remotePort+"]");
 	                	f.channel().eventLoop().schedule(new reConnect(), 5, TimeUnit.SECONDS);
 	                }
 	            }

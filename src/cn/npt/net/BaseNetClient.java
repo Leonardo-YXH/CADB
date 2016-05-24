@@ -125,5 +125,7 @@ public abstract class BaseNetClient implements INetClient, ITCP, Runnable {
 	public void close(){
 		this.status=NPTChannelStatus.CLOSED_INITIATIVE;
 		this.future.channel().close();
+		this.group.shutdownGracefully();
+		log.info(this.clientName+"["+this.future.channel().localAddress().toString()+"] shutdownGracefully...");
 	}
 }

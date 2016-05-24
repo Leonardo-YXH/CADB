@@ -103,7 +103,7 @@ public class SimpleTCPClient extends BaseNetClient {
 	                	future=f;
 	                }
 	                else{
-	                	f.channel().eventLoop().schedule(new reConnect(), 1, TimeUnit.SECONDS);
+	                	f.channel().eventLoop().schedule(new reConnect(), 5, TimeUnit.SECONDS);
 	                }
 	            }
 	        });
@@ -144,7 +144,7 @@ public class SimpleTCPClient extends BaseNetClient {
 //			}
 			time+=2000;
 			i++;
-			if(i>5){
+			if(i>20){
 				client.close();
 				break;
 			}

@@ -13,6 +13,7 @@ import com.greenpineyu.fel.context.FelContext;
 
 import cn.npt.db.event.BaseBS2DBHandler;
 import cn.npt.fs.alarm.IAlarmHandler;
+import cn.npt.fs.bean.AccumulateSensor;
 import cn.npt.fs.bean.AlarmSensor;
 import cn.npt.fs.bean.BSSensor;
 import cn.npt.fs.bean.CCSensor;
@@ -44,6 +45,10 @@ public class BaseMemoryCache {
 	 */
 	private List<AlarmSensor> alarmSensors;
 	/**
+	 * 里程传感器
+	 */
+	private List<AccumulateSensor> accumulateSensors;
+	/**
 	 * alarm执行控制开关
 	 */
 	private boolean alarmTroggleState;
@@ -67,6 +72,8 @@ public class BaseMemoryCache {
 		this.CCTroggleState=false;
 		this.alarmSensors=new ArrayList<AlarmSensor>();
 		this.alarmTroggleState=false;
+		
+		this.accumulateSensors=new ArrayList<AccumulateSensor>();
 	}
 
 	/**
@@ -76,8 +83,9 @@ public class BaseMemoryCache {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void execute(long time,Map<Long,Double> sensorValues){
-		Iterator<Long> it=sensorValues.keySet().iterator();
+		executeAccumulateSensor(time, sensorValues);
 		
+		Iterator<Long> it=sensorValues.keySet().iterator();
 		while(it.hasNext()){
 			long sensorId=it.next();
 			double sensorValue=sensorValues.get(sensorId);
@@ -92,7 +100,35 @@ public class BaseMemoryCache {
 			executeAlarmSensor(time, sensorValues);
 		}
 	} 
-	
+	/**
+	 * 量程计算(必须先于其他通道执行，获取先前pv)
+	 * @param time
+	 * @param sensorValues
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private void executeAccumulateSensor(long time,Map<Long,Double> sensorValues){
+		for(AccumulateSensor as:this.accumulateSensors){
+			Double v=sensorValues.get(as.getSrcSensorId());
+			if(v!=null){
+				Double pv=(Double)this.SensorFragments.get(as.getSrcSensorId()).getCurrentValue();
+				if(pv.isNaN()){
+					CachePool pool=this.SensorFragments.get(as.getSensorId());
+					Double apv=(Double) pool.getCurrentValue();
+					if(apv.isNaN()){
+						pool.setValue(0D, time);
+					}
+					else{
+						pool.setValue(apv, time);
+					}
+				}
+				else{
+					CachePool pool=this.SensorFragments.get(as.getSensorId());
+					Double apv=(Double) pool.getCurrentValue();
+					pool.setValue(apv+Math.abs(pv-v), time);
+				}
+			}
+		}
+	}
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void executeCCSensor(long time,Map<Long,Double> sensorValues){
 		for(CCSensor cSensor:CCSensors){
@@ -357,6 +393,11 @@ public class BaseMemoryCache {
 		//add alarm handler
 		AlarmHandler ah=new AlarmHandler(alarmSensor, alarmHandlers);
 		addHandler(alarmSensor.getSensorId(), ah, 0);
+	}
+	
+	public void addAccumulateSensor(AccumulateSensor accumulateSensor){
+		this.accumulateSensors.add(accumulateSensor);
+		addSensor(accumulateSensor.getSensorId());
 	}
 	
 	/**
