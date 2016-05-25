@@ -68,6 +68,7 @@ public class NptDBUtil {
 			Connection conn=openConnection();
 			Statement statement=conn.createStatement();
 			int rs = statement.executeUpdate(sql);
+			statement.close();
 			conn.close();
 			return rs;
 		} catch (SQLException e) {
