@@ -615,4 +615,17 @@ public class FourierTransform {
     	}
     	return data;
     }
+    
+    public static void main(String[] args) {
+		double[] x=new double[]{1,2,3,4};
+		ComplexNumber[] y=double2Complex(x);
+		HilbertTransform.FHT(y, Direction.Forward);
+		double[] ym=HilbertTransform.hilbertAbs(x);
+		for(int i=0;i<y.length;i++){
+			ComplexNumber v=y[i];
+			
+			System.out.println("r:"+v.real+" i:"+v.imaginary+" abs:"+ComplexNumber.Abs(v)+" "+ym[i]);
+		}
+		
+	}
 }

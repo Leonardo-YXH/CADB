@@ -105,7 +105,7 @@ public class SensorAlarmPack {
 	 * @return
 	 */
 	public String getContent(){
-		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+		SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		StringBuilder sb=new StringBuilder();
 		sb.append("<p>故障设备传感器：").append(this.alarmInfo).append("</p>")
 			.append("<p>警报开始时间：").append(sdf.format(new Date(this.startTime))).append("</p>")
