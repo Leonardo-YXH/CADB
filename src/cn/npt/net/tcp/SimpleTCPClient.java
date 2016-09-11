@@ -30,6 +30,7 @@ import cn.npt.net.tcp.test.EchoHandler;
  */
 public class SimpleTCPClient extends BaseNetClient {
 
+	private int localPort;
 	/**
 	 * 
 	 * @param remoteAddr 远程server地址
@@ -48,6 +49,29 @@ public class SimpleTCPClient extends BaseNetClient {
 		else{
 			this.clientName="SimpleTCPClient";
 		}
+		this.localPort=-1;
+		this.bootstrap.option(ChannelOption.TCP_NODELAY, true);
+	}
+	/**
+	 * 
+	 * @param remoteAddr 远程server地址
+	 * @param remotePort 远程server端口
+	 * @param localPort 本地端口
+	 * @param handler 业务逻辑处理代码
+	 * @param ssl 是否加密
+	 * @param clientName 客户端名称
+	 */
+	public SimpleTCPClient(String remoteAddr, int remotePort,int localPort,
+			BaseYHandler handler, boolean ssl,
+			String clientName) {
+		super(remoteAddr, remotePort, handler, ssl, clientName);
+		if(clientName!=null&&!clientName.isEmpty()){
+			this.clientName=clientName;
+		}
+		else{
+			this.clientName="SimpleTCPClient";
+		}
+		this.localPort=localPort;
 		this.bootstrap.option(ChannelOption.TCP_NODELAY, true);
 	}
 
@@ -89,6 +113,9 @@ public class SimpleTCPClient extends BaseNetClient {
                  	}
                  }
              });
+        if(this.localPort!=-1){
+        	this.bootstrap.bind(this.localPort);
+        }
         new Thread(new reConnect()).start();
 	}
 

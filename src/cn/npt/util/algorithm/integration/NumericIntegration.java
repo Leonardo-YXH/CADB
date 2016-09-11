@@ -1,6 +1,7 @@
 package cn.npt.util.algorithm.integration;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -163,11 +164,90 @@ public class NumericIntegration {
 		return Y;
 	}
 	
+	/**
+	 * 斜坡信号生成
+	 * @param length 信号长度
+	 * @param start 开始值
+	 * @param end 结束值
+	 * @param containEnd 是否包含末端值
+	 * @param type 0--线性；1--对数
+	 * @return
+	 */
+	public static double[] rampSignal(int length,double start,double end,boolean containEnd,int type){
+		double[] rs=new double[length];
+		
+		if(type==0){
+			if(containEnd){
+				double dx=(end-start)/(length-1);
+				rs[0]=start;
+				for(int i=1;i<length;i++){//Xi=X0+i*dx=X(i-1)+dx
+					rs[i]=rs[i-1]+dx;//减少乘法的计算
+				}
+			}
+			else{
+				double dx=(end-start)/length;
+				rs[0]=start;
+				for(int i=1;i<length;i++){//Xi=X0+i*dx=X(i-1)+dx
+					rs[i]=rs[i-1]+dx;
+				}
+			}
+		}
+		else if(type==1){
+			if(containEnd){
+				double dx=(Math.log(end)-Math.log(start))/(length-1);
+				double edx=Math.pow(Math.E, dx);
+				rs[0]=start;
+				for(int i=1;i<length;i++){//Xi=exp[ln(X0)+i*dx]=X(i-1)*exp(dx)
+					rs[i]=rs[i-1]*edx;//减少对数的计算量
+				}
+			}
+			else{
+				double dx=(Math.log(end)-Math.log(start))/length;
+				double edx=Math.pow(Math.E, dx);
+				rs[0]=start;
+				for(int i=1;i<length;i++){//Xi=exp[ln(X0)+i*dx]
+					rs[i]=rs[i-1]*edx;
+				}
+			}
+		}
+		
+		return rs;
+	}
+	
+	 /**
+     * 最小二乘法。y=kx+C
+     * @param x Vector.
+     * @param y Vector.
+     * @return Inclination,Interception between the vector x and y.返回斜率k和C
+     */
+    public static double[] Inclination(double[] x, double[] y){
+        if (x.length != y.length)
+            throw new IllegalArgumentException("The size of both matrix needs be equal");
+        
+        double meanX = 0; double meanY = 0;
+        for (int i = 0; i < x.length; i++) {
+            meanX += x[i];
+            meanY += y[i];
+        }
+        
+        meanX /= x.length;
+        meanY /= y.length;
+        
+        double num = 0, den = 0;
+        for (int i = 0; i < x.length; i++) {
+            num += (x[i] - meanX) * (y[i] - meanY);
+            den += Math.pow((x[i] - meanX),2);
+        }
+        double[] rs=new double[2];
+        rs[0]=num/den;
+        rs[1]=meanY-meanX*rs[0];
+        return rs;
+    }
 	public static void main(String[] args) {
 		//double[] X=new double[]{1d,2d,3d,4,5,6,7,8,9,10,11,12,13,14};
 		List<String> dataLines=new ArrayList<String>();
 		try {
-			dataLines=Files.readAllLines(Paths.get("D://振动原始数据.txt"));
+			dataLines=Files.readAllLines(Paths.get("D://振动原始数据.txt"),StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

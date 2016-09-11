@@ -65,7 +65,7 @@ public abstract class CachePool<T> {
 		this.handlers=new ArrayList<SensorHandler>();
 	}
 	/**
-	 * 
+	 * synchronized是否同步锁资源
 	 * @param value
 	 * @param time
 	 */
@@ -288,7 +288,6 @@ public abstract class CachePool<T> {
 		long rs=time/this.blockInterval;
 		return (int) (rs%size);
 	}
-	
 	
 	public List<T> getValues() {
 		return values;

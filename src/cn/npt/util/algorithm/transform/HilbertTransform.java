@@ -54,7 +54,7 @@ public class HilbertTransform {
             FourierTransform.FFT(cdata, FourierTransform.Direction.Forward);
 
             //double positive frequencies
-            for (int i = 1; i < (N/2); i++)
+            for (int i = 1; i < ((N+1)/2); i++)
             {
                     cdata[i].real *= 2.0;
                     cdata[i].imaginary *= 2.0;
@@ -73,7 +73,7 @@ public class HilbertTransform {
 
             // Convert back to our initial double array
             for (int i = 0; i < N; i++)
-                    data[i] = cdata[i].imaginary;
+                    data[i] = -cdata[i].imaginary;
             
             }
         // Backward operation
@@ -106,10 +106,10 @@ public class HilbertTransform {
             ComplexNumber[] shift = (ComplexNumber[])data.clone();
 
             // Perform FFT
-            FourierTransform.FFT(shift, FourierTransform.Direction.Backward);
+            FourierTransform.FFT(shift, FourierTransform.Direction.Forward);
 
             //double positive frequencies
-            for (int i = 1; i < (N/2); i++){
+            for (int i = 1; i < ((N+1)/2); i++){
                     shift[i].real *= 2.0;
                     shift[i].imaginary *= 2.0;
             }
@@ -122,7 +122,7 @@ public class HilbertTransform {
             }
 
             // Reverse the FFT
-            FourierTransform.FFT(shift, FourierTransform.Direction.Forward);
+            FourierTransform.FFT(shift, FourierTransform.Direction.Backward);
 
             // Put the Hilbert transform in the Imaginary part
             //  of the input signal, creating a Analytic Signal
@@ -178,10 +178,10 @@ public class HilbertTransform {
     public static double[] hilbertAbs(double[] X){
     	ComplexNumber[] Y=FourierTransform.double2Complex(X);
     	FHT(Y, Direction.Forward);
+    	//FHT(X, Direction.Forward);
     	double[] R=new double[X.length];
     	for(int i=0;i<Y.length;i++){
     		R[i]=ComplexNumber.Abs(Y[i]);
-    		System.out.println("i ");
     	}
     	return R;
     }

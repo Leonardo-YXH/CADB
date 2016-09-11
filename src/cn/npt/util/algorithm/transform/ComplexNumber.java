@@ -543,4 +543,7 @@ public class ComplexNumber {
             return this.real + " +" + this.imaginary + "i";
         return this.real + " " + this.imaginary + "i";
     }
+    
+    
+    //public static double complex2Polar(ComplexNumber )
 }
