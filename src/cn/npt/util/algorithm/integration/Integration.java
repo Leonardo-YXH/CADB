@@ -106,7 +106,7 @@ public class Integration {
 	 * @param X
 	 * @return
 	 */
-	private static double[] accmulate(double[] X){
+	public static double[] accmulate(double[] X){
 		double[] Y=new double[X.length];
 		Y[0]=X[0];
 		for(int i=1;i<X.length;i++){

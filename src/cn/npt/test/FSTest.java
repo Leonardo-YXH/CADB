@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -51,11 +52,25 @@ public class FSTest {
 		
 		//test8();
 		
-		System.out.println((1L<<48)+(1L<<32)+(1L<<16));
-		System.out.println((1L<<48)+(1L<<32)+(4L<<16));
-		System.out.println(0x7fffffffffff0000L);
-		System.out.println(0x7fffffff00000000L);
-		System.out.println(0x7fff000000000000L);
+//		System.out.println((1L<<48)+(1L<<32)+(1L<<16));
+//		System.out.println((1L<<48)+(1L<<32)+(4L<<16));
+//		System.out.println(0x7fffffffffff0000L);
+//		System.out.println(0x7fffffff00000000L);
+//		System.out.println(0x7fff000000000000L);
+		
+		int length=10000000;
+		ArrayList<Integer> d1=new ArrayList<>(length);
+		LinkedList<Integer> d2=new LinkedList<>();
+		for(int i=0;i<length;i++){
+			d1.add(i);
+			d2.add(i);
+		}
+		
+		testList(d1);
+		testList2(d1);
+		System.out.println("linkedlist...............");
+		//testList(d2);
+		//testList2(d2);
 	}
 	/**
 	 * 打印文件中的Sensorvalue
@@ -322,6 +337,25 @@ public class FSTest {
 			i++;
 		}
 		
+	}
+	
+	public static void testList(List<Integer> data){
+		long t1=System.currentTimeMillis();
+		for(Integer item:data){
+			//System.out.println(item);
+		}
+		long dt=t1-System.currentTimeMillis();
+		System.out.println(-dt+"ms......iter");
+	}
+	
+	public static void testList2(List<Integer> data){
+		long t1=System.currentTimeMillis();
+		for(int i=0,size=data.size();i<size;i++){
+			data.get(i);
+			//System.out.println(data.get(i));
+		}
+		long dt=t1-System.currentTimeMillis();
+		System.out.println(-dt+"ms......i");
 	}
 	/**
 	 * 
