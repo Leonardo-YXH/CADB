@@ -32,6 +32,7 @@ public class PowerSpectrum {
 	 * @return
 	 */
 	public static double[] cepstrum(double[] X){
+		X=fmeanfilt(X);
 		double[] Y=null;
 		Y=powerSpectrum(X);
 		ComplexNumber[] data=new ComplexNumber[X.length-1];
@@ -64,8 +65,17 @@ public class PowerSpectrum {
 		}
 		return Y;
 	}
+	/**
+	 * 倒谱（Xscalemax,Xscalemin=0）
+	 * @param sampleFreq
+	 * @param length
+	 * @return Xscalemax
+	 */
+	public static double cepstrum_elem2(int sampleFreq,int length){
+		return length/(sampleFreq*2);
+	}
 	public static void main(String[] args) {
-		double[] X=new double[]{1d,2d,3d,4d};
+		double[] X=new double[]{1d,2d,6d,4d};
 		//powerSpectrum(X);
 		cepstrum(X);
 	}

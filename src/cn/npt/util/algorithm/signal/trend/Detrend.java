@@ -1,7 +1,6 @@
 package cn.npt.util.algorithm.signal.trend;
 
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
-import org.apache.commons.math3.fitting.WeightedObservedPoint;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 
 /**

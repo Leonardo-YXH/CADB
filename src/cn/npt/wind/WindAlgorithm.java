@@ -6,11 +6,13 @@ import java.util.List;
 import cn.npt.util.algorithm.array.ArrayUtil;
 import cn.npt.util.algorithm.integration.Integration;
 import cn.npt.util.algorithm.integration.NumericIntegration;
-import cn.npt.util.algorithm.signal.cepstrum.Cepstrum;
+import cn.npt.util.algorithm.signal.cepstrum.PowerSpectrum;
 import cn.npt.util.algorithm.signal.correlation.Correlation;
 import cn.npt.util.algorithm.signal.featurevalue.FeatureValue;
 import cn.npt.util.algorithm.signal.probableDensity.ProbableDensity;
 import cn.npt.util.algorithm.signal.trend.Detrend;
+import cn.npt.util.algorithm.signal.wavelet.DiscreteWavelet;
+import cn.npt.util.algorithm.signal.wavelet.Wavelet;
 import cn.npt.util.algorithm.signal.zoomdlg.ZoomDlg;
 import cn.npt.util.algorithm.transform.FourierTransform.Direction;
 import cn.npt.util.algorithm.transform.HilbertTransform;
@@ -166,6 +168,16 @@ public class WindAlgorithm {
 		return rs;
 	}
 	/**
+	 * 概率密度
+	 * @param X
+	 * @param histogramLength 直方数量
+	 * @param type 0--百分比；1--绝对值
+	 * @return 返回数组结果最后一个元素是dt,即[Y,dt]
+	 */
+	public static List<Double> probableDensity(double[] X,int histogramLength,int type){
+		return ProbableDensity.probableDensity(X, histogramLength, type);
+	}
+	/**
 	 * 细化分析
 	 * @param sampleFreq 采样频率
 	 * @param centerFreq 中心频率
@@ -175,22 +187,49 @@ public class WindAlgorithm {
 	public static List<Double> zoomDlg(double sampleFreq,double centerFreq,double zoom){
 		return ZoomDlg.zoomdlg(sampleFreq, centerFreq, zoom);
 	}
+	/**
+	 * 倒谱
+	 * @param X
+	 * @return
+	 */
+	public static double[] cepstrum(double[] X){
+		return PowerSpectrum.cepstrum(X);
+	}
+	/**
+	 * 小波变换(采用哈尔小波)
+	 * @param X (X.length==2^n)
+	 * @param scale
+	 * @return
+	 */
+	public static double[] wavelet(double[] X,int scale){
+		double[] X0=DiscreteWavelet.padPow2(X);
+		int L=(int)(Math.log(X0.length)/Math.log(2));
+		L/=scale;
+		double[] Y=null;
+		try {
+			Y=DiscreteWavelet.transform(X0, Wavelet.Haar, 2, L, DiscreteWavelet.Direction.forward);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return Y;
+	}
 	public static void main(String[] args) {
 		double[] X=new double[]{1d,3d,-5d,4d};
 		double[] Y=null;
-		List<Double> Ylist=null;
+		//List<Double> Ylist=null;
 		
 		//your test code
 		//Y=detrend_cal(X, 2);
 		//Ylist=ProbableDensity.probableDensity(X, 6, 0);
 		//Ylist=static_calc(X);
-		Ylist=zoomDlg(2000, 3000, 2);
+		//Ylist=zoomDlg(2000, 3000, 2);
+		Y=wavelet(X, 2);
 		//print Y
-//		for (int i = 0; i < Y.length; i++) {
-//			System.out.println(Y[i]);
-//		}
-		for(Double y:Ylist){
-			System.out.println(y);
+		for (int i = 0; i < Y.length; i++) {
+			System.out.println(Y[i]);
 		}
+//		for(Double y:Ylist){
+//			System.out.println(y);
+//		}
 	}
 }

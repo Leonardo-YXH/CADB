@@ -1,7 +1,5 @@
 package cn.npt.util.algorithm.signal.correlation;
 
-import org.apache.commons.math3.fitting.PolynomialCurveFitter;
-
 /**
  * 相关性分析
  * @author leonardo
